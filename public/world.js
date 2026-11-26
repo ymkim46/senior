@@ -30,7 +30,7 @@ function kst() {
 }
 function clockText(min) {
   const h = Math.floor(min / 60) % 24, m = Math.floor(min % 60);
-  const ap = h < 12 ? '오전' : h === 12 ? '낮' : '오후';
+  const ap = h === 0 ? '밤' : h < 12 ? '오전' : h === 12 ? '낮' : '오후';
   return `${ap} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
 }
 function after(mins) {
@@ -403,7 +403,11 @@ function tag(text, bg, fg = '#fff') {
 const people = [];
 function person({ name, cloth, pants = 0x6f6a60, hair = 0xdcdcdc, style = 0, bg = 'rgba(38,52,43,.82)', x = 0, z = 0 }) {
   const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-  [-0.1, 0.1].forEach((lx) => { cyl(0.085, 0.075, 0.5, pants, lx, 0.3, 0, g, 10); box(0.13, 0.07, 0.25, 0x4a3a30, lx, 0.035, 0.04, g); });
+  const legs = [-1, 1].map((sd) => { // 엉덩이에서 앞뒤로 흔들리는 다리
+    const lg = new THREE.Group(); lg.position.set(sd * 0.1, 0.56, 0); g.add(lg);
+    cyl(0.085, 0.075, 0.5, pants, 0, -0.26, 0, lg, 10); box(0.13, 0.07, 0.25, 0x4a3a30, 0, -0.525, 0.04, lg);
+    lg.userData.sd = sd; return lg;
+  });
   add(new THREE.CapsuleGeometry(0.215, 0.36, 4, 12), cloth, 0, 0.86, 0, g);
   cyl(0.07, 0.08, 0.08, 0xf2cdaa, 0, 1.17, 0, g, 8);
   [-0.12, 0.12].forEach((cx) => { const c = ball(0.035, 0xf0a99a, cx, 1.32, 0.165, g); c.castShadow = false; });
@@ -419,7 +423,7 @@ function person({ name, cloth, pants = 0x6f6a60, hair = 0xdcdcdc, style = 0, bg 
     const m = new THREE.Mesh(geo, M(cloth)); m.castShadow = true; ag.add(m); ag.userData.sd = sd; return ag;
   });
   const lb = tag(name, bg); lb.position.y = 1.98; g.add(lb);
-  const p = { g, arms, label: lb, target: new THREE.Vector3(x, 0, z), face: null, seated: false, wave: false, bubble: null, bubbleUntil: 0 };
+  const p = { g, arms, legs, label: lb, target: new THREE.Vector3(x, 0, z), face: null, seated: false, wave: false, bubble: null, bubbleUntil: 0 };
   people.push(p); return p;
 }
 function removePerson(p) {
@@ -501,14 +505,19 @@ function movePeople(dt, t) {
     } else if (p.face) g.rotation.y = Math.atan2(p.face.x - g.position.x, p.face.z - g.position.z);
     else if (p.netR !== undefined) g.rotation.y = p.netR;
     const seated = !moving && p.seated;
-    const fy = floorY(g.position.x, g.position.z) + (moving ? Math.abs(Math.sin(t * 9)) * 0.05 : 0) + (seated ? 0.08 : 0);
+    const fy = floorY(g.position.x, g.position.z) + (moving ? Math.abs(Math.cos(t * 9)) * 0.04 : 0) + (seated ? 0.08 : 0);
     g.position.y += (fy - g.position.y) * Math.min(1, dt * 10);
     g.scale.y += ((seated ? 0.8 : 1) - g.scale.y) * Math.min(1, dt * 6);
-    p.label.scale.y = 0.46 / g.scale.y;
+    const near = Math.max(0.42, Math.min(1, cam.position.distanceTo(g.position) / 8)); // 가까이서는 이름표를 작게
+    p.label.scale.set(2.2 * near, 0.46 * near / g.scale.y, 1);
     for (const ag of p.arms) {
       const want = (!moving && p.wave) ? ag.userData.sd * (1.5 + Math.sin(t * 2.2) * 1.3) : 0;
       ag.rotation.z += (want - ag.rotation.z) * Math.min(1, dt * 6);
       ag.rotation.x = moving ? Math.sin(t * 9) * 0.5 * ag.userData.sd : seated ? -0.9 : 0;
+    }
+    for (const lg of p.legs) { // 걸을 때는 팔과 엇갈려 앞뒤로, 앉으면 앞으로 뻗습니다
+      const want = moving ? -Math.sin(t * 9) * 0.6 * lg.userData.sd : seated ? -1.35 : 0;
+      lg.rotation.x += (want - lg.rotation.x) * Math.min(1, dt * 14);
     }
     if (p.bubble?.visible && now > p.bubbleUntil) p.bubble.visible = false;
   }

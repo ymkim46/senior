@@ -26,7 +26,7 @@ function kst() {
 }
 function clockText(min) {
   const h = Math.floor(min / 60) % 24, m = Math.floor(min % 60);
-  return `${h < 12 ? '오전' : h === 12 ? '낮' : '오후'} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
+  return `${h === 0 ? '밤' : h < 12 ? '오전' : h === 12 ? '낮' : '오후'} ${h % 12 || 12}시${m ? ` ${m}분` : ''}`;
 }
 function after(mins) { mins = Math.max(1, Math.round(mins)); const h = Math.floor(mins / 60), m = mins % 60; return `${h ? `${h}시간 ` : ''}${m ? `${m}분 ` : ''}뒤`; }
 const josa = (w, a, b) => { const k = (w.charCodeAt(w.length - 1) - 0xAC00) % 28; return k === 0 || (a === '로' && k === 8) ? a : b; };
