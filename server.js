@@ -124,7 +124,7 @@ async function api(req, res, url) {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8',
-  '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg',
+  '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.glb': 'model/gltf-binary',
 };
 const GZIP_EXT = new Set(['.html', '.css', '.js', '.json', '.svg', '.webmanifest']);
 const gzCache = new Map();
@@ -142,7 +142,7 @@ function serveStatic(req, res, url) {
     const ext = path.extname(file);
     const headers = {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': /^\/(img|vendor)\//.test(rel) ? 'public, max-age=604800' : 'no-cache',
+      'Cache-Control': /^\/(img|vendor|models|rooms)\//.test(rel) ? 'public, max-age=604800' : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
     };
     if (GZIP_EXT.has(ext) && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
@@ -168,7 +168,7 @@ const server = http.createServer((req, res) => {
 // ---------- 3D 타운 (WebSocket) ----------
 // 접속자는 정원이 있는 '하우스'(방)에 나뉘어 들어갑니다. 사람이 늘면 하우스가 자동으로 늘어납니다.
 const ROOM_CAP = Number(process.env.ROOM_CAP) || 40;
-const BOUNDS = { x: 20, z0: -14, z1: 18 };
+const BOUNDS = { x: 28, z0: -14, z1: 59 };
 const rooms = new Map(); // id -> Set<player>
 const ipConns = new Map();
 let nextPlayerId = 1, nextRoomId = 1;
