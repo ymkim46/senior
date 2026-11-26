@@ -18,13 +18,13 @@
 
   <div class="top" id="top" hidden>
     <div class="bar">
-      <h1 id="town-name">온라인 실버타운</h1>
-      <button class="pill" id="sound" type="button" aria-pressed="true">🔊 소리 켜짐</button>
+      <div class="modes" role="group" aria-label="보는 방식">
+        <button class="pill" id="m-stay" type="button" aria-pressed="true">켜 두기</button>
+        <button class="pill" id="m-walk" type="button" aria-pressed="false">돌아다니기</button>
+      </div>
+      <button class="pill icon" id="sound" type="button" aria-pressed="true" aria-label="소리 끄기">🔊</button>
     </div>
-    <div class="modes" role="group" aria-label="보는 방식">
-      <button class="pill" id="m-stay" type="button" aria-pressed="true">켜 두기</button>
-      <button class="pill" id="m-walk" type="button" aria-pressed="false">돌아다니기</button>
-    </div>
+    <h1 id="town-name">온라인 실버타운</h1>
     <details id="demo" hidden>
       <summary>시험 조작</summary>
       <div class="demo">
@@ -41,6 +41,11 @@
     </details>
   </div>
 
+  <div class="zoom" id="zoom" hidden>
+    <button class="pill icon" id="zoom-in" type="button" aria-label="가까이 보기">＋</button>
+    <button class="pill icon" id="zoom-out" type="button" aria-label="멀리 보기">－</button>
+  </div>
+
   <div class="bottom" id="bottom" hidden>
     <div class="side">
       <p class="hint" id="hint" hidden>가고 싶은 곳을 누르세요</p>
@@ -52,9 +57,12 @@
     <div class="caption" id="caption" aria-live="polite">
       <p class="when" id="when"></p>
       <p class="now" id="now"></p>
-      <p class="next" id="next"></p>
-      <p class="say" id="say"></p>
-      <p class="wx" id="wx"></p>
+      <div class="more">
+        <p class="next" id="next"></p>
+        <p class="say" id="say"></p>
+        <p class="wx" id="wx"></p>
+      </div>
+      <p class="tip">눌러서 자세히 보기</p>
     </div>
   </div>
 
