@@ -1,0 +1,17 @@
+{
+  "name": "온라인 실버타운",
+  "subtitle": "매일 문 여는 우리 동네 시니어 하우스",
+  "schedule": [
+    { "time": "07:00", "minutes": 60, "title": "아침 인사와 출석", "announce": "아침 인사 시간이에요", "scene": "greet", "say": "지배인: 안녕히 주무셨어요? 오늘도 잘 오셨습니다." },
+    { "time": "08:00", "minutes": 60, "title": "아침 식사", "announce": "아침 드실 시간이에요", "scene": "meal", "meal": true, "say": "영양사: 아침은 든든하게, 국과 밥을 천천히 드세요." },
+    { "time": "10:00", "minutes": 30, "title": "아침 체조", "announce": "아침 체조 시간이에요", "scene": "gym", "say": "운동 선생님: 정원에서 천천히 따라 해 보세요." },
+    { "time": "11:00", "minutes": 40, "title": "두뇌 놀이와 그리기", "announce": "두뇌 놀이 시간이에요", "scene": "craft", "say": "공방 탁자에 모여 함께 해요." },
+    { "time": "12:00", "minutes": 60, "title": "점심 식사", "announce": "점심 드실 시간이에요", "scene": "meal", "meal": true, "say": "영양사: 점심 드시고 약도 잊지 마세요." },
+    { "time": "13:30", "minutes": 30, "title": "간호사 선생님 오시는 시간", "announce": "간호사 선생님이 오셨어요", "scene": "nurse", "say": "간호사: 점심 약은 드셨어요? 물도 한 잔 드세요." },
+    { "time": "14:00", "minutes": 60, "title": "노래교실", "announce": "노래교실 시간이에요", "scene": "music", "say": "피아노 앞에 모여 함께 불러요." },
+    { "time": "15:00", "minutes": 20, "title": "차와 간식", "announce": "차 한 잔 드실 시간이에요", "scene": "meal", "meal": true, "say": "영양사: 따뜻한 차 한 잔과 물을 챙겨 드세요." },
+    { "time": "16:00", "minutes": 30, "title": "정원 산책", "announce": "정원 산책 시간이에요", "scene": "walk", "say": "운동 선생님: 해 지기 전에 꽃길을 한 바퀴 걸어요." },
+    { "time": "18:00", "minutes": 60, "title": "저녁 식사", "announce": "저녁 드실 시간이에요", "scene": "meal", "meal": true, "say": "영양사: 저녁은 가볍게, 꼭꼭 씹어 드세요." },
+    { "time": "20:00", "minutes": 30, "title": "하루 마무리 인사", "announce": "하루 마무리 인사 시간이에요", "scene": "greet", "say": "지배인: 오늘도 수고 많으셨습니다. 편히 주무세요." }
+  ]
+}
