@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>온라인 실버타운</title>
+<meta name="theme-color" content="#4f7a5a">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/img/icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700&display=swap">
+<link rel="stylesheet" href="/world.css">
+<link rel="stylesheet" href="/rooms.css">
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="view" id="view">
+    <img class="pic" id="pic-a" alt="">
+    <img class="pic" id="pic-b" alt="">
+    <div class="tint" id="tint"></div>
+    <div class="glow" id="glow"></div>
+    <canvas id="fx"></canvas>
+  </div>
+
+  <div class="top" id="top" hidden>
+    <div class="bar">
+      <p class="place" id="place"></p>
+      <button class="pill icon" id="sound" type="button" aria-pressed="true" aria-label="소리 끄기">🔊</button>
+    </div>
+    <h1 id="town-name">온라인 실버타운</h1>
+    <details id="demo" hidden>
+      <summary>시험 조작</summary>
+      <div class="demo">
+        <label for="sim"><span id="sim-label">시간 돌려 보기</span>
+          <input type="range" id="sim" min="0" max="1435" step="5" value="600"></label>
+        <div class="row"><button class="pill" id="sim-now" type="button">지금 시각으로</button></div>
+        <div class="row" role="group" aria-label="날씨">
+          <button class="pill" id="w-real" type="button" aria-pressed="true">실제</button>
+          <button class="pill" id="w-clear" type="button" aria-pressed="false">맑음</button>
+          <button class="pill" id="w-rain" type="button" aria-pressed="false">비</button>
+          <button class="pill" id="w-snow" type="button" aria-pressed="false">눈</button>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="zoom" id="zoom" hidden>
+    <button class="pill icon" id="zoom-in" type="button" aria-label="가까이 보기">＋</button>
+    <button class="pill icon" id="zoom-out" type="button" aria-label="멀리 보기">－</button>
+  </div>
+
+  <div class="bottom" id="bottom" hidden>
+    <div class="side">
+      <span class="acts">
+        <button class="pill" id="follow" type="button" hidden>⏰ 시간표 따라가기</button>
+        <button class="pill" id="clock-chip" type="button" aria-label="지금 시각과 할 일 다시 듣기">🕘</button>
+        <button class="pill" id="map-btn" type="button">🗺 안내도</button>
+      </span>
+    </div>
+    <div class="caption" id="caption" aria-live="polite">
+      <p class="when" id="when"></p>
+      <p class="now" id="now"></p>
+      <div class="more">
+        <p class="next" id="next"></p>
+        <p class="say" id="say"></p>
+        <p class="wx" id="wx"></p>
+      </div>
+      <p class="tip">누르면 닫혀요</p>
+    </div>
+  </div>
+
+  <div class="map" id="map" hidden>
+    <div class="map-card">
+      <div class="map-head">
+        <h2>안내도</h2>
+        <button class="pill" id="map-close" type="button">닫기</button>
+      </div>
+      <p class="map-sub">가 보고 싶은 곳을 누르세요.</p>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+  </div>
+
+  <form class="gate" id="gate" autocomplete="off">
+    <div class="card">
+      <h2 id="gate-name">온라인 실버타운</h2>
+      <p class="sub" id="gate-sub">매일 문 여는 우리 동네 시니어 하우스</p>
+      <label for="in-name">이름</label>
+      <input id="in-name" type="text" maxlength="12" placeholder="예: 김영희" enterkeyhint="done">
+      <label for="in-region">사는 곳 <span class="why">(그 동네의 지금 날씨를 보여 드려요)</span></label>
+      <select id="in-region"></select>
+      <button class="enter" id="enter" type="submit">들어가기</button>
+    </div>
+  </form>
+</div>
+<script type="module" src="/rooms.js"></script>
+</body>
+</html>
