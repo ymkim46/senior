@@ -45,5 +45,3 @@ npm start            # http://localhost:3000
 - `server.js` — 정적 파일, 시간표·날씨 API, 접속자 위치 동기화(WebSocket), 방문 수 저장
 - `public/world.js` — 3D 타운 (three.js, `public/vendor/`에 포함)
 - `public/img/` — 들어가는 문에 쓰는 분위기 그림
-
-저장소 맨 위의 `index.html`, `styles.css`, `script.js`와 그림 세 장은 예전 "시니어 군단" 소개 페이지이며, 실버타운과는 따로 남겨 둔 것입니다.
