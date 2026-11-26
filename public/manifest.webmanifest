@@ -1,0 +1,9 @@
+{
+  "name": "온라인 실버타운",
+  "short_name": "실버타운",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4ecdf",
+  "theme_color": "#4f7a5a",
+  "icons": [{ "src": "/img/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
