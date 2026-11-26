@@ -74,13 +74,25 @@ function chime() {
     });
   } catch { /* 소리를 못 내는 기기 */ }
 }
-function speak(text) {
+function speak(text, onEnd) {
   try {
-    if (!('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) return false;
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 0.85;
+    if (onEnd) u.onend = onEnd;
     speechSynthesis.speak(u);
-  } catch { /* 말소리를 못 내는 기기 */ }
+    return true;
+  } catch { return false; }
+}
+// 아래 글씨 칸: 보여 주고 읽어 준 다음 스스로 사라집니다. 시계 단추를 누르면 다시 나옵니다.
+let capTimer = 0;
+function hideCaption() { clearTimeout(capTimer); $('caption').hidden = true; }
+function announce(text, chimeFirst = true) {
+  clearTimeout(capTimer); $('caption').hidden = false;
+  capTimer = setTimeout(hideCaption, soundOn ? 40000 : 12000); // 읽기가 끝났다는 신호를 못 받는 기기를 위한 여유
+  if (!soundOn) return;
+  if (chimeFirst) chime();
+  setTimeout(() => speak(text, () => { clearTimeout(capTimer); capTimer = setTimeout(hideCaption, 2500); }), chimeFirst ? 900 : 0);
 }
 function wxText() {
   if (!realWx || demoWx) return '';
@@ -103,7 +115,8 @@ function paintCaption(force) {
   $('say').textContent = lastSay;
   $('wx').textContent = wxText();
   $('caption').classList.toggle('meal', !!(s.cur && s.cur.meal));
-  if (entered && lastTitle !== null && title !== lastTitle && soundOn) { chime(); setTimeout(() => speak(`${title}. ${lastSay}`), 900); }
+  $('clock-chip').textContent = `🕘 ${clockText(min)}`;
+  if (entered && lastTitle !== null && title !== lastTitle) announce(`${title}. ${lastSay}`);
   lastTitle = title;
 }
 const fullStatus = () => `오늘은 ${today.month}월 ${today.day}일 ${DOW[today.dow]}입니다. 지금은 ${clockText(nowMin())}입니다. ${$('now').textContent}. ${$('next').textContent} ${wxText()}`;
@@ -713,7 +726,7 @@ $('gate').addEventListener('submit', (e) => {
   const week = (() => { const d = new Date(Date.UTC(today.year, today.month - 1, today.day)); const mon = d.getTime() - ((today.dow + 6) % 7) * 864e5; let n = 0; for (let i = 0; i < 7; i++) { const x = new Date(mon + i * 864e5); if (store.stamps.includes(`${x.getUTCFullYear()}-${x.getUTCMonth() + 1}-${x.getUTCDate()}`)) n++; } return n; })();
   toast(first ? `출석 도장 쾅! 이번 주 ${week}번째예요` : `${store.name} 님, 다시 오셨네요`);
   paintCaption(true);
-  chime(); setTimeout(() => speak(`${store.name} 님, 어서 오세요. ${fullStatus()}`), 900);
+  announce(`${store.name} 님, 어서 오세요. ${fullStatus()}`);
 });
 // 안내도
 const mapEl = $('map'), mapBox = $('map-box');
@@ -740,7 +753,8 @@ $('map-close').addEventListener('click', () => { mapEl.hidden = true; });
 setInterval(() => { if (!mapEl.hidden) paintMe(); }, 500);
 $('zoom-in').addEventListener('click', () => zoomBy(0.72));
 $('zoom-out').addEventListener('click', () => zoomBy(1.4));
-$('caption').addEventListener('click', () => $('caption').classList.toggle('open'));
+$('caption').addEventListener('click', () => { hideCaption(); try { speechSynthesis.cancel(); } catch { /* 없음 */ } });
+$('clock-chip').addEventListener('click', () => { paintCaption(true); announce(fullStatus(), false); });
 $('m-stay').addEventListener('click', () => setMode('stay'));
 $('m-walk').addEventListener('click', () => setMode('walk'));
 $('hello').addEventListener('click', () => { if (me) { sayHello(me); send({ t: 'hello' }); } });
@@ -748,7 +762,7 @@ $('sound').addEventListener('click', function () {
   soundOn = !soundOn;
   this.setAttribute('aria-pressed', soundOn);
   this.textContent = soundOn ? '🔊' : '🔇'; this.setAttribute('aria-label', soundOn ? '소리 끄기' : '소리 켜기');
-  if (soundOn) { chime(); setTimeout(() => speak(fullStatus()), 900); } else try { speechSynthesis.cancel(); } catch { /* 없음 */ }
+  if (soundOn) announce(fullStatus()); else try { speechSynthesis.cancel(); } catch { /* 없음 */ }
 });
 if (DEMO) {
   $('demo').hidden = false;
