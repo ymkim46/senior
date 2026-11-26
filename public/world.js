@@ -30,6 +30,7 @@ function kst() {
   o.key = `${o.year}-${o.month}-${o.day}`;
   return o;
 }
+const josa = (w, a, b) => ((w.charCodeAt(w.length - 1) - 0xAC00) % 28 === 0 ? a : b);
 function clockText(min) {
   const h = Math.floor(min / 60) % 24, m = Math.floor(min % 60);
   const ap = h === 0 ? '밤' : h < 12 ? '오전' : h === 12 ? '낮' : '오후';
@@ -201,7 +202,9 @@ flat(new THREE.RingGeometry(2.7, 4.7, 48), pathMat, 0, 0.03, 6);
 // 꽃과 덤불은 한 덩어리로 묶어 그립니다 (느린 기기를 위해)
 const blobs = []; // [x, y, z, 크기, 색]
 const HYD = [0x9db4e6, 0xf0a8c0, 0xf6f3ea, 0xb9a0e0, 0x8fc3e8, 0xf4c2d2];
+const obC = [], obR = [], ALLSEATS = []; // 장애물(둥근 것 [x, z, 반지름], 네모난 것 [x0, z0, x1, z1])과 앉을 자리
 function hydrangea(x, z, s = 1) {
+  obC.push([x, z, 0.45 * s]);
   blobs.push([x, 0.32 * s, z, 0.55 * s, C.leafDark]);
   if (season === 0) return;
   const fam = HYD[Math.floor(rnd() * 3) * 2 % HYD.length], n = 6 + Math.floor(rnd() * 4);
@@ -213,6 +216,7 @@ function hydrangea(x, z, s = 1) {
 function bed(x0, z0, x1, z1, n) { for (let i = 0; i < n; i++) hydrangea(x0 + (x1 - x0) * (i + rnd() * 0.6) / n, z0 + (z1 - z0) * (i + rnd() * 0.6) / n + (rnd() - 0.5) * 0.5, 0.85 + rnd() * 0.4); }
 const leafCol = [0x8d7a66, 0xa9d48a, 0x5fa24e, 0xd9963a][season];
 function tree(x, z, s = 1) {
+  obC.push([x, z, 0.45 * s]);
   cyl(0.2 * s, 0.34 * s, 3.4 * s, 0x6b4a36, x, 1.7 * s, z, null, 8);
   if (season === 0) { [0.5, -0.6, 0.15].forEach((r) => { const m = cyl(0.05, 0.1, 2.2 * s, 0x6b4a36, x + r, 3.9 * s, z, null, 6); m.rotation.z = -r; }); return; }
   [[0, 4.4, 0, 1.9], [-1.3, 3.8, 0.5, 1.35], [1.2, 3.9, -0.4, 1.45], [-0.2, 5.4, -0.2, 1.25], [0.5, 4.2, 1.1, 1.2]].forEach((f) => {
@@ -220,10 +224,12 @@ function tree(x, z, s = 1) {
   });
 }
 function pine(x, z, s = 1) {
+  obC.push([x, z, 0.8 * s]);
   cyl(0.16 * s, 0.24 * s, 1.6 * s, 0x6b4a36, x, 0.8 * s, z, null, 8);
   [[1.7, 2.2, 2], [1.3, 2, 3.2], [0.9, 1.8, 4.3]].forEach((c) => add(new THREE.ConeGeometry(c[0] * s, c[1] * s, 10), 0x2f6a45, x, c[2] * s, z));
 }
 function bench(x, z, ry) {
+  [-0.55, 0.55].forEach((lx) => { const wx = x + lx * Math.cos(ry), wz = z - lx * Math.sin(ry); obC.push([wx, wz, 0.5]); ALLSEATS.push({ x: wx, z: wz, fx: wx + Math.sin(ry) * 5, fz: wz + Math.cos(ry) * 5 }); });
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
   box(2.2, 0.1, 0.6, C.wood, 0, 0.48, 0, g); box(2.2, 0.55, 0.08, C.wood, 0, 0.85, -0.28, g);
   [-0.95, 0.95].forEach((lx) => box(0.1, 0.48, 0.55, C.walnut, lx, 0.24, 0, g));
@@ -248,11 +254,11 @@ bed(-15.2, 8.5, -15.2, 15.5, 7); bed(-14, 16.2, -3.6, 16.2, 9); bed(3.6, 16.2, 1
   bench(px, pz - 0.9, 0); cyl(0.5, 0.5, 0.06, C.walnut, px, 0.6, pz + 0.3); cyl(0.07, 0.2, 0.6, C.walnut, px, 0.3, pz + 0.3);
 }
 [[-11, 3.4], [-11, 6.6]].forEach((p, k) => { // 텃밭 상자
-  box(1.5, 0.55, 2.6, C.wood, p[0], 0.28, p[1]); box(1.3, 0.1, 2.4, 0x5a4634, p[0], 0.56, p[1]);
+  box(1.5, 0.55, 2.6, C.wood, p[0], 0.28, p[1]); box(1.3, 0.1, 2.4, 0x5a4634, p[0], 0.56, p[1]); obR.push([p[0] - 0.75, p[1] - 1.3, p[0] + 0.75, p[1] + 1.3]);
   for (let i = 0; i < 9; i++) blobs.push([p[0] + (rnd() - 0.5) * 1, 0.72 + rnd() * 0.1, p[1] + (rnd() - 0.5) * 2.1, 0.2 + rnd() * 0.08, season === 0 ? 0x8d8a6a : (k && rnd() < 0.4) ? 0xa58bd0 : C.leaf]);
 });
-[[-16.4, 1], [16.4, 1]].forEach((p) => box(0.7, 0.9, 32, C.leafDark, p[0], 0.45, p[1]));       // 울타리
-[[-9.4, 17.2], [9.4, 17.2]].forEach((p) => box(13.4, 0.9, 0.7, C.leafDark, p[0], 0.45, p[1]));
+[[-16.4, 1], [16.4, 1]].forEach((p) => { box(0.7, 0.9, 32, C.leafDark, p[0], 0.45, p[1]); obR.push([p[0] - 0.35, -15, p[0] + 0.35, 17.5]); });       // 울타리
+[[-9.4, 17.2], [9.4, 17.2]].forEach((p) => { box(13.4, 0.9, 0.7, C.leafDark, p[0], 0.45, p[1]); obR.push([p[0] - 6.7, 16.85, p[0] + 6.7, 17.55]); });
 const lampMat = new THREE.MeshLambertMaterial({ color: 0xfff0cc, emissive: 0xffc46a, emissiveIntensity: 0 });
 [[-1.7, 1.2], [1.7, 1.2], [-1.7, 11.4], [1.7, 11.4], [5, 5.2], [-5, 5.2]].forEach((p) => { cyl(0.07, 0.07, 0.6, 0x4a4f55, p[0], 0.3, p[1], null, 8); cyl(0.11, 0.11, 0.2, lampMat, p[0], 0.7, p[1], null, 8).castShadow = false; });
 
@@ -284,7 +290,7 @@ let dog = null;
   [[-10, 24.5, 1], [9, 24, 1.1], [21.5, 30, 1], [23.5, 47, 1.1], [12, 56, 1], [-6, 57, 1.2], [-19, 52, 1], [-21, 29, 0.9]].forEach((q) => tree(q[0], q[1], q[2]));
   [[-25, 34], [25, 39], [2, 58.5], [-14, 56.5], [17, 26]].forEach((q) => pine(q[0], q[1], 1.1));
   bench(6, 24.9, 0); bench(-7, 24.9, 0); bench(-5, 55.1, Math.PI); bench(8, 54.6, Math.PI);
-  bed(-7.5, 22.6, -3.6, 22.6, 4); bed(3.6, 22.6, 7.5, 22.6, 4); bed(18.5, 34, 20.5, 46, 6); bed(-12, 53.6, -2, 55.6, 6);
+  bed(-7.5, 22.6, -3.6, 22.6, 4); bed(3.6, 22.6, 7.5, 22.6, 4); bed(22.4, 34, 23.4, 46, 6); bed(-12, 53.6, -2, 55.6, 6);
   for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283 + 0.3, x = Math.cos(a) * 20.2, z = LAKE.z + Math.sin(a) * 14.6; cyl(0.07, 0.07, 0.6, 0x4a4f55, x, 0.3, z, null, 8); cyl(0.11, 0.11, 0.2, lampMat, x, 0.7, z, null, 8).castShadow = false; }
   // 오리
   for (let i = 0; i < 4; i++) { const d = new THREE.Group(); const bd = ball(0.2, i ? 0xffffff : 0x8a6a44, 0, 0.14, 0, d); bd.scale.set(0.85, 0.7, 1.3); ball(0.11, i ? 0xffffff : 0x2f6a4a, 0, 0.36, 0.2, d);
@@ -366,17 +372,17 @@ function armchair(x, z, fx, fz, col, list) {
   const g = new THREE.Group(); g.position.set(x, FY, z); g.rotation.y = Math.atan2(fx - x, fz - z); scene.add(g);
   box(0.82, 0.24, 0.78, col, 0, 0.42, 0, g); box(0.82, 0.62, 0.18, col, 0, 0.8, -0.32, g);
   [-0.44, 0.44].forEach((ax) => { box(0.07, 0.07, 0.8, C.wood, ax, 0.66, 0, g); box(0.07, 0.66, 0.07, C.wood, ax, 0.33, 0.36, g); box(0.07, 0.66, 0.07, C.wood, ax, 0.33, -0.36, g); });
-  list?.push({ x, z, fx, fz });
+  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz });
 }
 function chair(x, z, fx, fz, col, list) {
   const g = new THREE.Group(); g.position.set(x, FY, z); g.rotation.y = Math.atan2(fx - x, fz - z); scene.add(g);
   box(0.52, 0.09, 0.5, col, 0, 0.46, 0, g); box(0.52, 0.5, 0.07, C.oak, 0, 0.78, -0.24, g);
   [[-0.22, -0.2], [0.22, -0.2], [-0.22, 0.2], [0.22, 0.2]].forEach((l) => box(0.05, 0.44, 0.05, C.oak, l[0], 0.22, l[1], g));
-  list?.push({ x, z, fx, fz });
+  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz });
 }
 function vase(x, y, z, col) { cyl(0.09, 0.07, 0.2, 0xe8eef0, x, y + 0.1, z, null, 10); [[0, 0.3, 0], [0.1, 0.26, 0.06], [-0.09, 0.27, -0.05]].forEach((f) => blobs.push([x + f[0], y + f[1], z + f[2], 0.11, season === 0 ? 0xf6f3ea : col])); }
 function roundSet(cx, cz, n, r, list, cols, big) {
-  const top = big ? 0.78 : 0.6;
+  const top = big ? 0.78 : 0.6; obC.push([cx, cz, big ? 1.15 : 0.55]);
   cyl(big ? 1.15 : 0.55, big ? 1.15 : 0.55, 0.07, big ? C.oak : C.walnut, cx, FY + top, cz, null, 28);
   cyl(big ? 0.28 : 0.1, big ? 0.4 : 0.26, top, big ? C.oak : C.walnut, cx, FY + top / 2, cz, null, 12);
   vase(cx, FY + top + 0.04, cz, 0xf0a8c0);
@@ -468,6 +474,70 @@ function tag(text, bg, fg = '#fff') {
   s.scale.set(2.2, 0.46, 1); s.renderOrder = 5; s.userData.draw = draw; draw();
   return s;
 }
+// 벽과 큰 가구
+obR.push([-11.3, -14.25, -11, -2.9], [11, -14.25, 11.3, -2.9], [-11.3, -14.3, 11.3, -13.95], [-2.8, -13.95, 2.8, -13.4],
+  [-10.95, -12.7, -10.45, -5.3], [9.95, -12.7, 10.9, -6.1], [-2.45, -6.35, 2.45, -4.85], [0.8, -12.3, 2.95, -10.7]);
+obC.push([-10.3, -3.9, 0.4], [10.3, -3.9, 0.4], [-3.4, -13.1, 0.4], [3.6, -13.1, 0.4], [10, 6.9, 0.5], [-22.5, 40, 0.4]);
+
+// ───────── 길 찾기: 장애물을 피해 돌아갑니다 ─────────
+const GX0 = -28, GZ0 = -15, CS = 0.5, GW = 112, GH = 150, GN = GW * GH;
+const grid = new Uint8Array(GN);
+for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+  const x = GX0 + (i + 0.5) * CS, z = GZ0 + (j + 0.5) * CS;
+  let b = inLake(x, z, 0.35);
+  for (let k = 0; !b && k < obC.length; k++) { const c = obC[k]; b = (x - c[0]) ** 2 + (z - c[1]) ** 2 < (c[2] + 0.3) ** 2; }
+  for (let k = 0; !b && k < obR.length; k++) { const r = obR[k]; b = x > r[0] - 0.3 && x < r[2] + 0.3 && z > r[1] - 0.3 && z < r[3] + 0.3; }
+  grid[j * GW + i] = b ? 1 : 0;
+}
+const cellOf = (x, z) => { const i = Math.floor((x - GX0) / CS), j = Math.floor((z - GZ0) / CS); return i < 0 || j < 0 || i >= GW || j >= GH ? -1 : j * GW + i; };
+const cellXZ = (c) => [GX0 + (c % GW + 0.5) * CS, GZ0 + (Math.floor(c / GW) + 0.5) * CS];
+const isBlocked = (x, z) => { const c = cellOf(x, z); return c < 0 || grid[c] === 1; };
+function clearLine(x0, z0, x1, z1) { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 0.2) || 1; for (let k = 0; k <= n; k++) if (isBlocked(x0 + (x1 - x0) * k / n, z0 + (z1 - z0) * k / n)) return false; return true; }
+function freeNear(x, z) {
+  const c = cellOf(x, z); if (c >= 0 && !grid[c]) return c;
+  const ci = Math.max(0, Math.min(GW - 1, Math.floor((x - GX0) / CS))), cj = Math.max(0, Math.min(GH - 1, Math.floor((z - GZ0) / CS)));
+  let best = -1, bd = 1e9;
+  for (let r = 1; r <= 12 && best < 0; r++) for (let j = cj - r; j <= cj + r; j++) for (let i = ci - r; i <= ci + r; i++) {
+    if (i < 0 || j < 0 || i >= GW || j >= GH || grid[j * GW + i]) continue;
+    const q = cellXZ(j * GW + i), d = (q[0] - x) ** 2 + (q[1] - z) ** 2; if (d < bd) { bd = d; best = j * GW + i; }
+  }
+  return best;
+}
+const gS = new Float32Array(GN), fS = new Float32Array(GN), cameFrom = new Int32Array(GN), stamp = new Uint32Array(GN), done = new Uint32Array(GN);
+let gen = 0;
+const NBR = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.414], [1, -1, 1.414], [-1, 1, 1.414], [-1, -1, 1.414]];
+function findPath(sx, sz, tx, tz) { // 지나갈 꺾이는 점들과, 끝점이 비어 있는지를 돌려줍니다
+  const s0 = cellOf(sx, sz), t0 = cellOf(tx, tz);
+  if (s0 >= 0 && t0 >= 0 && !grid[s0] && !grid[t0] && clearLine(sx, sz, tx, tz)) return { pts: [], end: [tx, tz], free: true };
+  const s = freeNear(sx, sz), t = freeNear(tx, tz);
+  if (s < 0 || t < 0) return { pts: [], end: [tx, tz], free: true };
+  const te = cellXZ(t), ti = t % GW, tj = Math.floor(t / GW);
+  gen++; const heap = [s]; gS[s] = 0; fS[s] = 0; stamp[s] = gen; cameFrom[s] = -1;
+  let found = s === t;
+  while (heap.length && !found) {
+    let bi = 0; for (let k = 1; k < heap.length; k++) if (fS[heap[k]] < fS[heap[bi]]) bi = k;
+    const c = heap[bi]; heap[bi] = heap[heap.length - 1]; heap.pop();
+    if (c === t) { found = true; break; }
+    if (done[c] === gen) continue; done[c] = gen;
+    const ci = c % GW, cj = Math.floor(c / GW);
+    for (const d of NBR) {
+      const ni = ci + d[0], nj = cj + d[1]; if (ni < 0 || nj < 0 || ni >= GW || nj >= GH) continue;
+      const n = nj * GW + ni; if (grid[n] || done[n] === gen) continue;
+      if (d[2] > 1 && (grid[cj * GW + ni] || grid[nj * GW + ci])) continue; // 모서리를 비스듬히 스치지 않게
+      const ng = gS[c] + d[2];
+      if (stamp[n] !== gen || ng < gS[n]) { stamp[n] = gen; gS[n] = ng; cameFrom[n] = c; fS[n] = ng + Math.hypot(ni - ti, nj - tj) * 1.001; heap.push(n); }
+    }
+  }
+  const free = t === t0;
+  if (!found) return { pts: [], end: te, free };
+  const cells = []; for (let c = t; c !== -1; c = cameFrom[c]) cells.push(cellXZ(c)); cells.reverse();
+  const pts = []; let cur = s === s0 ? [sx, sz] : cells[0], i = 0;
+  if (s !== s0) pts.push(cells[0]);
+  while (i < cells.length - 1) { let k = cells.length - 1; while (k > i + 1 && !clearLine(cur[0], cur[1], cells[k][0], cells[k][1])) k--; pts.push(cells[k]); cur = cells[k]; i = k; }
+  if (free && pts.length) { const b = pts.length > 1 ? pts[pts.length - 2] : (s === s0 ? [sx, sz] : cells[0]); if (clearLine(b[0], b[1], tx, tz)) pts.pop(); }
+  return { pts, end: te, free };
+}
+
 const people = [];
 function person({ name, cloth, pants = 0x6f6a60, hair = 0xdcdcdc, style = 0, bg = 'rgba(38,52,43,.82)', x = 0, z = 0 }) {
   const top = new THREE.Group(); top.position.set(x, 0, z); scene.add(top);
@@ -503,12 +573,44 @@ function sayHello(p) {
   if (!p.bubble) { p.bubble = tag('안녕하세요!', 'rgba(192,79,53,.95)'); p.bubble.position.y = 2.5; p.g.add(p.bubble); }
   p.bubble.visible = true; p.bubbleUntil = performance.now() + 4000;
 }
+// 도우미와 이웃이 건네는 말
+let lastTalk = 0, visitUntil = 0, nextVisit = 6;
+function lineFor(p) {
+  const min = nowMin(), s = slot(min), nm = store.name || '어르신', k = wxKind(), t = realWx?.temp;
+  const hello = min < 660 ? '좋은 아침이에요' : min < 1020 ? '점심은 맛있게 드셨어요' : '저녁 시간 편안히 보내고 계세요';
+  const nxt = s.nxt ? `${clockText(s.nxt.s)}에 ${s.nxt.title}${josa(s.nxt.title, '가', '이')} 있어요.` : '오늘 일정은 다 끝났어요. 푹 쉬세요.';
+  const wx = k === 'rain' ? '밖에 비가 와요. 나가실 땐 우산 챙기세요.' : k === 'snow' ? '눈이 와요. 길이 미끄러우니 천천히 걸으세요.' : t !== undefined && t <= 5 ? '오늘 많이 추워요. 따뜻하게 입으셨어요?' : '오늘 날이 좋아요. 호수 한 바퀴 어떠세요?';
+  const L = {
+    butler: [`${nm} 님, ${hello}?`, nxt, wx, '가고 싶은 곳이 있으면 안내도를 눌러 보세요.', `오늘은 ${today.month}월 ${today.day}일 ${DOW[today.dow]}이에요.`, '의자를 누르면 앉아서 쉬실 수 있어요.'],
+    chef: ['물은 자주 드시고 계세요? 한 잔 드시고 가세요.', s.cur?.meal ? '천천히 꼭꼭 씹어 드세요.' : nxt, '오늘은 채소 반찬을 하나 더 드셔 보세요.', '식사는 거르지 않는 게 제일이에요.'],
+    coach: ['어깨를 뒤로 크게 다섯 번 돌려 볼까요?', '앉아 계셨으면 한번 일어나 기지개를 켜 보세요.', '호수 한 바퀴, 저랑 같이 걸으실래요?', '숨을 깊이 들이쉬고, 천천히 내쉬어 보세요.'],
+    nurse: ['오늘 약은 챙겨 드셨어요?', '어디 불편한 곳은 없으세요? 있으면 보건소로 꼭 알려 주세요.', '물 한 잔 드시고, 잠깐 쉬었다 하세요.'],
+    walk: ['같이 한 바퀴 도실래요?', '호숫가 바람이 참 좋지요?', '오리들이 오늘도 나왔네요.'],
+    dog: ['우리 복실이예요. 순해서 안 물어요.', '복실이가 산책을 제일 좋아해요.'],
+    fish: ['오늘은 입질이 통 없네요, 허허.', '물 보고 앉아 있으면 마음이 편해요.'],
+    baduk: ['한 수 두고 가세요.', '어이쿠, 이 수는 못 봤네.'],
+    farm: ['상추가 많이 자랐어요. 좀 뜯어 가세요.', '흙 만지면 하루가 금방 가요.'],
+    read: ['여기 앉아 책 보기 딱 좋아요.', '장미 향이 여기까지 나요.'],
+    chat: ['어서 와요, 여기 앉아요.', '차 한 잔 같이 해요.', '요즘 잘 지내지요?'],
+  }[p.role] || ['안녕하세요!'];
+  p.lineIdx = ((p.lineIdx ?? -1) + 1) % L.length;
+  return L[p.lineIdx];
+}
+function talk(p) {
+  const now = performance.now(); p.greetedAt = now; lastTalk = now;
+  const who = p.says || '이웃', text = lineFor(p);
+  sayHello(p);
+  if (!p.seated) p.face = me.g.position.clone(); // 나를 바라봅니다
+  toast(`${who}: ${text}`, 9000);
+  try { if (soundOn && !speechSynthesis.speaking) speak(text); } catch { /* 없음 */ }
+}
 const STAFF = 'rgba(79,122,90,.95)';
 const butler = person({ name: '도우미 · 지배인', cloth: 0xa9bd9a, pants: 0x8fa582, hair: 0x2a2622, style: 2, bg: STAFF, x: 2.2, z: -2.2 });
 const chef = person({ name: '도우미 · 영양사', cloth: 0xfafaf5, pants: 0x7f9670, hair: 0x2a2622, style: 2, bg: STAFF, x: 9.3, z: -9 });
 const coach = person({ name: '도우미 · 운동 선생님', cloth: 0x8fae7a, pants: 0x4a4f55, hair: 0x2a2622, style: 0, bg: STAFF, x: -6.6, z: 8.6 });
 const nurse = person({ name: '보건소 방문 간호사', cloth: 0x9fb8e0, pants: 0x9fb8e0, hair: 0x2a2622, style: 2, bg: 'rgba(63,105,170,.95)', x: 0, z: 16 });
 nurse.g.visible = false;
+Object.assign(butler, { role: 'butler', says: '지배인' }); Object.assign(chef, { role: 'chef', says: '영양사' }); Object.assign(coach, { role: 'coach', says: '운동 선생님' }); Object.assign(nurse, { role: 'nurse', says: '간호사' });
 // 도우미는 걷고 손 흔드는 동작이 들어 있는 로봇 모델로 바꿔 끼웁니다 (못 받으면 원래 모습 그대로)
 new GLTFLoader().load('/models/robot.glb', (gltf) => {
   [[butler, 0x8fae7a], [chef, 0xf1ece0], [coach, 0x7fa8d8]].forEach(([p, col]) => {
@@ -533,6 +635,7 @@ const NB = [
   ['바둑 두는 이웃', 0xb98ac4, 0], ['바둑 두는 이웃', 0x8a8f9a, 3], ['텃밭 가꾸는 이웃', 0xd9805f, 3], ['책 읽는 이웃', 0x6fa7a0, 2],
   ['이야기 나누는 이웃', 0xc9886a, 1], ['이야기 나누는 이웃', 0x9fb08a, 2],
 ].map((q, i) => person({ name: q[0], cloth: q[1], hair: [0xe8e8e8, 0xcfcfcf, 0xbdbdbd, 0xdedede][i % 4], style: q[2], x: (i % 5) * 2 - 4, z: 8 + (i % 3) }));
+NB.forEach((p, k) => { p.role = ['walk', 'walk', 'dog', 'fish', 'baduk', 'baduk', 'farm', 'read', 'chat', 'chat'][k]; });
 const trail = (a) => [Math.sin(a) * 18.5, LAKE.z + Math.cos(a) * 13.2];
 function neighbors(sc, t) {
   NB.forEach((p, k) => {
@@ -592,7 +695,9 @@ function direct(sc, t) {
   if (sc === 'greet') place(butler, 0, 1.1, false, 0, 10);
   else if (sc === 'music') place(butler, 0.3, -11.5, false, 2, -11.5);
   else if (sc === 'craft') place(butler, 2.9, -5.6, false, 0, -5.6);
+  else if (me && entered && sc !== 'night' && t < visitUntil) place(butler, me.g.position.x + 1.3, me.g.position.z + 0.5, false, me.g.position.x, me.g.position.z); // 지배인이 찾아와 말을 겁니다
   else place(butler, 2.2, -2.2, false, 2.2, 10);
+  if (me && entered && t > nextVisit && (sc === 'free' || sc === 'greet')) { visitUntil = t + 35; nextVisit = t + 170; butler.greetedAt = 0; }
   chef.g.visible = sc !== 'night';
   if (sc === 'meal' || sc === 'tea') place(chef, 6.5, -7.7, false, 5.4, -9.9); else place(chef, 9.4, -9.2, false, 0, -9.2);
   coach.g.visible = sc !== 'night';
@@ -611,15 +716,19 @@ const tmp = new THREE.Vector3();
 function movePeople(dt, t) {
   const now = performance.now();
   for (const p of people) {
-    const g = p.g; tmp.set(p.target.x - g.position.x, 0, p.target.z - g.position.z);
+    const g = p.g;
+    if (!p.plan || p.planSeat !== p.seated || Math.hypot(p.target.x - p.planT[0], p.target.z - p.planT[1]) > 1.2) { // 목적지가 바뀌면 길을 다시 찾습니다
+      p.plan = findPath(g.position.x, g.position.z, p.target.x, p.target.z); p.planT = [p.target.x, p.target.z]; p.planSeat = p.seated;
+    }
+    let fx = p.target.x, fz = p.target.z;
+    if (!p.seated && !p.plan.free) { fx = p.plan.end[0]; fz = p.plan.end[1]; } // 서 있을 자리가 막혀 있으면 바로 옆 빈자리로
+    tmp.set(fx - g.position.x, 0, fz - g.position.z);
     const d = tmp.length(), moving = d > 0.06;
     if (moving) {
-      const step = Math.min(d, (d > 9 ? 3.4 : 1.7) * dt); tmp.multiplyScalar(step / d);
-      if (inLake(g.position.x + tmp.x, g.position.z + tmp.z, 0.9)) { // 호수는 물가를 따라 돌아갑니다
-        const nx = (g.position.x - LAKE.x) / LAKE.a ** 2, nz = (g.position.z - LAKE.z) / LAKE.b ** 2, nl = Math.hypot(nx, nz) || 1;
-        const sgn = (-nz * tmp.x + nx * tmp.z) >= 0 ? 1 : -1;
-        tmp.set((-nz / nl) * sgn * step + (nx / nl) * step * 0.35, 0, (nx / nl) * sgn * step + (nz / nl) * step * 0.35);
-      }
+      const path = p.plan.pts;
+      while (path.length && Math.hypot(path[0][0] - g.position.x, path[0][1] - g.position.z) < 0.3) path.shift();
+      if (path.length) tmp.set(path[0][0] - g.position.x, 0, path[0][1] - g.position.z);
+      const dl = tmp.length() || 1, step = Math.min(dl, (d > 9 ? 3.4 : 1.7) * dt); tmp.multiplyScalar(step / dl);
       g.position.x += tmp.x; g.position.z += tmp.z;
       g.rotation.y = Math.atan2(tmp.x, tmp.z);
     } else if (p.face) g.rotation.y = Math.atan2(p.face.x - g.position.x, p.face.z - g.position.z);
@@ -738,8 +847,30 @@ function tapWalk(e) {
   else hit.x = Math.max(-26.5, Math.min(26.5, hit.x));
   if (inLake(hit.x, hit.z, 0.6)) { const k = 1 / Math.sqrt(((hit.x - LAKE.x) / (LAKE.a + 0.9)) ** 2 + ((hit.z - LAKE.z) / (LAKE.b + 0.9)) ** 2); hit.x = LAKE.x + (hit.x - LAKE.x) * k; hit.z = LAKE.z + (hit.z - LAKE.z) * k; } // 물에는 못 들어갑니다
   if (hit.z < -2.9 && hit.z > -3.4 && Math.abs(hit.x) > 11) hit.z = -2.6;
+  // 사람을 누르면 다가가서 말을 겁니다
+  const hit2 = new THREE.Vector3(); ray.ray.intersectPlane(planeHi, hit2);
+  const nearTo = (x, z) => Math.min(Math.hypot(hit.x - x, hit.z - z), Math.hypot(hit2.x - x, hit2.z - z));
+  for (const p of people) if (p !== me && p.g.visible && nearTo(p.g.position.x, p.g.position.z) < 0.8) {
+    const dx = me.g.position.x - p.g.position.x, dz = me.g.position.z - p.g.position.z, dl = Math.hypot(dx, dz) || 1;
+    if (!p.real) p.greetedAt = 0; lastTalk = 0;
+    place(me, p.g.position.x + dx / dl * 1.3, p.g.position.z + dz / dl * 1.3, false, p.g.position.x, p.g.position.z); marker.visible = false; return;
+  }
+  // 의자를 누르면 가서 앉습니다
+  let seat = null, sd = 0.75;
+  for (const q of ALLSEATS) { const d = nearTo(q.x, q.z); if (d < sd && !seatTaken(q)) { sd = d; seat = q; } }
+  if (seat) { sit(me, seat); marker.visible = false; toast('앉으러 가요', 4000); return; }
   place(me, hit.x, hit.z, false);
   marker.position.set(hit.x, floorY(hit.x, hit.z) + 0.06, hit.z); marker.visible = true;
+}
+const planeHi = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9);
+const seatTaken = (q) => people.some((p) => p !== me && p.g.visible && Math.hypot(p.target.x - q.x, p.target.z - q.z) < 0.4);
+function sitOrStand() {
+  if (!me) return;
+  if (mode !== 'walk') setMode('walk');
+  if (me.seated) { const c = freeNear(me.g.position.x, me.g.position.z), q = c < 0 ? [me.g.position.x, me.g.position.z] : cellXZ(c); place(me, q[0], q[1], false); return; }
+  let seat = null, sd = 9;
+  for (const q of ALLSEATS) { const d = Math.hypot(q.x - me.g.position.x, q.z - me.g.position.z); if (d < sd && !seatTaken(q)) { sd = d; seat = q; } }
+  if (seat) { sit(me, seat); toast('가까운 의자에 앉으러 가요', 4000); } else toast('가까이에 빈 의자가 없어요. 의자 쪽으로 가 보세요.', 5000);
 }
 const lift = (e) => { const had = pointers.delete(e.pointerId); if (had && e.type === 'pointerup' && !pointers.size && moved <= 10) tapWalk(e); if (pointers.size < 2) pinch = 0; };
 cv.addEventListener('pointerup', lift); cv.addEventListener('pointercancel', lift);
@@ -806,7 +937,7 @@ function frame() {
     if (dd > 1.1) { const st = Math.min(dd - 1.1, (dd > 8 ? 6 : 2.2) * dt); dog.position.x += dx / dd * st; dog.position.z += dz / dd * st; dog.rotation.y = Math.atan2(dx, dz); dog.position.y = floorY(dog.position.x, dog.position.z) + Math.abs(Math.sin(T * 11)) * 0.04; }
     dog.userData.tail.rotation.z = Math.sin(T * 12) * 0.6; }
   if (me && entered) { const now = performance.now(); // 가까이 가면 이웃과 도우미가 먼저 인사합니다
-    for (const p of people) if (!p.real && p.g.visible && now - p.greetedAt > 45000 && p.g.position.distanceTo(me.g.position) < 2.4) { p.greetedAt = now; sayHello(p); } }
+    if (now - lastTalk > 9000) for (const p of people) if (!p.real && p.g.visible && now - p.greetedAt > 50000 && p.g.position.distanceTo(me.g.position) < 2.6) { talk(p); break; } }
   for (const sg of signs) sg.visible = cam.position.distanceTo(sg.position) > 7.5; // 바로 앞의 팻말은 가려서 치웁니다
   const meal0 = s.scene === 'tea';
   const meal = s.scene === 'meal' || meal0; bowls.visible = meal;
@@ -828,7 +959,7 @@ function setMode(m) {
   if (m === 'walk' && me) place(me, me.g.position.x, me.g.position.z, false);
   if (m === 'stay') try { navigator.wakeLock?.request('screen').catch(() => {}); } catch { /* 화면 켜 두기를 못 하는 기기 */ }
 }
-function toast(text, ms = 7000) { const h = $('hint'); h.textContent = text; h.hidden = false; setTimeout(() => { if (h.textContent === text) setMode(mode); }, ms); }
+function toast(text, ms = 7000) { const h = $('hint'); h.textContent = text; h.hidden = false; setTimeout(() => { if (h.textContent === text) { h.textContent = '가고 싶은 곳을 누르세요'; h.hidden = mode !== 'walk'; } }, ms); }
 function nearestRegion(lat, lon) { let b = 0, bd = 1e9; REGIONS.forEach((r, i) => { const d = (r[1] - lat) ** 2 + ((r[2] - lon) * 0.8) ** 2; if (d < bd) { bd = d; b = i; } }); return b; }
 
 const sel = $('in-region');
@@ -874,6 +1005,7 @@ $('gate').addEventListener('submit', (e) => {
   paintCaption(true);
   announce(`${store.name} 님, 어서 오세요. ${fullStatus()}`);
   if (musicOn) startMusic();
+  nextVisit = T + 5;
 });
 // 안내도
 const mapEl = $('map'), mapBox = $('map-box');
@@ -899,6 +1031,8 @@ function goTo(q) {
 $('map-btn').addEventListener('click', () => { paintMe(); mapEl.hidden = false; });
 $('map-close').addEventListener('click', () => { mapEl.hidden = true; });
 setInterval(() => { if (!mapEl.hidden) paintMe(); }, 500);
+$('sit').addEventListener('click', sitOrStand);
+setInterval(() => { if (me) $('sit').textContent = me.seated ? '🧍 일어서기' : '🪑 앉기'; }, 400);
 $('music').addEventListener('click', function () {
   musicOn = !musicOn; store.music = musicOn; save();
   this.setAttribute('aria-pressed', musicOn); this.setAttribute('aria-label', musicOn ? '음악 끄기' : '음악 켜기');
@@ -934,6 +1068,6 @@ fetch('/api/state').then((r) => r.json()).then((j) => {
   PLAN = (j.schedule || []).map((p) => { const [h, m] = p.time.split(':').map(Number); return { ...p, s: h * 60 + m, e: h * 60 + m + p.minutes }; }).sort((a, b) => a.s - b.s);
   drawCal(); paintCaption(true);
 }).catch(() => paintCaption(true));
-if (DEMO) window.__town = { get me() { return me; }, butler, chef, coach, view, THREE }; // 시험용
+if (DEMO) window.__town = { get me() { return me; }, butler, chef, coach, view, THREE, people, findPath, isBlocked, ALLSEATS }; // 시험용
 if (renderer) frame();
 else { $('fail').hidden = false; cv.hidden = true; setInterval(() => paintCaption(false), 5000); }
