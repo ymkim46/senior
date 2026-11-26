@@ -1,0 +1,16 @@
+/* 그림으로 보는 실버타운: 방마다 그림 한 장, 그 위에 실제 시각의 빛과 날씨 */
+.view{position:absolute;inset:0;overflow:hidden;background:#2b3a30;touch-action:none;cursor:grab}
+.pic{position:absolute;top:0;left:0;height:100%;width:auto;max-width:none;opacity:0;transition:opacity 1.2s ease;will-change:transform;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.pic.on{opacity:1}
+.tint,.glow,#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tint{mix-blend-mode:multiply;transition:background-color 2s linear}
+.glow{mix-blend-mode:screen;opacity:0;transition:opacity 2s linear;
+  background:radial-gradient(60% 45% at 50% 30%,rgba(255,196,120,.55),rgba(255,170,90,.12) 60%,transparent 80%)}
+.place{flex:1;align-self:center;font-family:var(--disp);font-size:30px;line-height:1.1;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.65),0 0 14px rgba(0,0,0,.45)}
+.gate{background:linear-gradient(rgba(30,44,34,.2),rgba(30,44,34,.45)),url(/rooms/garden.jpg) center/cover}
+.thumbs{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:66vh;overflow:auto;padding:2px}
+.thumbs button{position:relative;padding:0;border:3px solid transparent;border-radius:14px;overflow:hidden;background:#ddd;aspect-ratio:16/10;cursor:pointer}
+.thumbs button[aria-current="true"]{border-color:var(--coral)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs span{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;color:#fff;font-weight:700;font-size:19px;text-align:left;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+@media (min-width:700px){ .thumbs{grid-template-columns:repeat(3,1fr)} }
