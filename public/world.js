@@ -349,14 +349,14 @@ const pMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.16, transparent
 const fall = new THREE.Points(pGeo, pMat); fall.visible = false; fall.frustumCulled = false; scene.add(fall);
 
 // ───────── 사람 ─────────
-function tag(text, bg) {
+function tag(text, bg, fg = '#fff') {
   const c = document.createElement('canvas'); c.width = 384; c.height = 80;
   const x = c.getContext('2d');
   const draw = () => {
     x.clearRect(0, 0, 384, 80); x.font = '700 34px "Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
     const w = Math.min(372, x.measureText(text).width + 44);
     x.fillStyle = bg; x.beginPath(); if (x.roundRect) x.roundRect(192 - w / 2, 8, w, 64, 32); else x.rect(192 - w / 2, 8, w, 64); x.fill();
-    x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 192, 42, 350);
+    x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 192, 42, 350);
     t.needsUpdate = true;
   };
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
@@ -405,8 +405,13 @@ function userPerson(u) {
   return person({ name: u.leader ? `${u.name} · 건강리더` : u.name, cloth: CLOTHES[look[0] % CLOTHES.length], hair: [0xe8e8e8, 0xcfcfcf, 0xbdbdbd, 0xdedede][look[1] % 4], style: look[1] % 4,
     bg: u.leader ? 'rgba(192,79,53,.92)' : 'rgba(38,52,43,.82)', x: u.x ?? 0, z: u.z ?? 12 });
 }
-document.fonts?.ready.then(() => people.forEach((p) => p.label.userData.draw()));
+document.fonts?.ready.then(() => { people.forEach((p) => p.label.userData.draw()); signs.forEach((s) => s.userData.draw()); });
 
+// 안내도에 나오는 곳들: [이름, 서 있을 자리 x, z, 팻말 자리 x, z]
+const PLACES = [['라운지', -7, -7.9, -7.6, -8.6], ['공방', 2.9, -5.6, 0, -4.7], ['피아노', 0.3, -9.7, 0.6, -12.2], ['식당', 6.5, -7.7, 7.6, -8.2],
+  ['텃밭', -9.6, 5, -11, 5], ['꽃길', 3.7, 6, 0, 6], ['쉼터', 8.4, 7.6, 10, 6.6], ['체조 마당', -6.6, 10.6, -6.6, 10.6], ['대문', 0, 14.8, 0, 15.6]];
+const signs = PLACES.map((q) => { const s = tag(q[0], 'rgba(255,250,242,.94)', '#26342b'); s.position.set(q[3], floorY0(q[3], q[4]) + 3.3, q[4]); s.scale.set(2.9, 0.6, 1); scene.add(s); return s; });
+function floorY0(x, z) { return Math.abs(x) <= 11.2 && z <= -2.9 && z >= -14.2 ? FY : 0; }
 const inHall = (x, z) => Math.abs(x) <= 11.2 && z <= -2.9 && z >= -14.2;
 const floorY = (x, z) => (inHall(x, z) ? FY : 0);
 function place(p, x, z, seated, fx, fz, wave) {
@@ -663,6 +668,29 @@ $('gate').addEventListener('submit', (e) => {
   paintCaption(true);
   chime(); setTimeout(() => speak(`${store.name} 님, 어서 오세요. ${fullStatus()}`), 900);
 });
+// 안내도
+const mapEl = $('map'), mapBox = $('map-box');
+const mx = (x) => `${(x + 17) / 34 * 100}%`, mz = (z) => `${(z + 15) / 33 * 100}%`;
+PLACES.forEach((q, i) => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'spot'; b.id = `spot-${i}`; b.textContent = q[0];
+  b.style.left = mx(q[3]); b.style.top = mz(q[4]);
+  b.addEventListener('click', () => goTo(q));
+  mapBox.append(b);
+});
+function paintMe() { if (me) { $('map-me').style.left = mx(me.g.position.x); $('map-me').style.top = mz(me.g.position.z); } }
+function goTo(q) {
+  mapEl.hidden = true;
+  if (!me) return;
+  setMode('walk');
+  place(me, q[1], q[2], false);
+  marker.position.set(q[1], floorY(q[1], q[2]) + 0.06, q[2]); marker.visible = true;
+  const last = (q[0].charCodeAt(q[0].length - 1) - 0xAC00) % 28;
+  const text = `${q[0]}${last === 0 || last === 8 ? '로' : '으로'} 가고 있어요`;
+  toast(text, 6000); if (soundOn) speak(text);
+}
+$('map-btn').addEventListener('click', () => { paintMe(); mapEl.hidden = false; });
+$('map-close').addEventListener('click', () => { mapEl.hidden = true; });
+setInterval(() => { if (!mapEl.hidden) paintMe(); }, 500);
 $('m-stay').addEventListener('click', () => setMode('stay'));
 $('m-walk').addEventListener('click', () => setMode('walk'));
 $('hello').addEventListener('click', () => { if (me) { sayHello(me); send({ t: 'hello' }); } });

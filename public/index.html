@@ -44,7 +44,10 @@
   <div class="bottom" id="bottom" hidden>
     <div class="side">
       <p class="hint" id="hint" hidden>가고 싶은 곳을 누르세요</p>
-      <button class="pill hello" id="hello" type="button">👋 인사하기</button>
+      <span class="acts">
+        <button class="pill" id="map-btn" type="button">🗺 안내도</button>
+        <button class="pill" id="hello" type="button">👋 인사하기</button>
+      </span>
     </div>
     <div class="caption" id="caption" aria-live="polite">
       <p class="when" id="when"></p>
@@ -52,6 +55,32 @@
       <p class="next" id="next"></p>
       <p class="say" id="say"></p>
       <p class="wx" id="wx"></p>
+    </div>
+  </div>
+
+  <div class="map" id="map" hidden>
+    <div class="map-card">
+      <div class="map-head">
+        <h2>안내도</h2>
+        <button class="pill" id="map-close" type="button">닫기</button>
+      </div>
+      <p class="map-sub">가고 싶은 곳을 누르면 걸어갑니다.</p>
+      <div class="map-box" id="map-box">
+        <svg viewBox="0 0 34 33" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="0" y="0" width="34" height="33" rx="1" fill="#b9d6a0"/>
+          <rect x="5.7" y="0.9" width="22.6" height="11.3" rx="0.5" fill="#ecd9b8" stroke="#a9804f" stroke-width="0.25"/>
+          <rect x="15.7" y="12.2" width="2.6" height="5" fill="#e6dccb"/>
+          <circle cx="17" cy="21" r="3.7" fill="none" stroke="#e6dccb" stroke-width="2"/>
+          <rect x="15.7" y="25.6" width="2.6" height="6.6" fill="#e6dccb"/>
+          <rect x="20.6" y="20.5" width="5" height="2.2" fill="#e6dccb"/>
+          <circle cx="17" cy="21" r="1.9" fill="#d9a6c9"/>
+          <rect x="25" y="19.6" width="4" height="4" rx="0.4" fill="#c9a06a"/>
+          <rect x="5.2" y="17.1" width="1.6" height="5.8" rx="0.2" fill="#8a6a44"/>
+        </svg>
+        <span class="map-hall">큰 홀</span>
+        <span class="map-garden">정원</span>
+        <span class="map-me" id="map-me">나</span>
+      </div>
     </div>
   </div>
 
