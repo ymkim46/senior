@@ -42,15 +42,14 @@ summary{min-height:44px;padding:9px 14px;font-weight:700;color:var(--soft)}
 .row .pill{min-height:44px;font-size:16px;padding:0 12px;flex:1}
 
 .side{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;pointer-events:none !important}
-.acts{display:flex;gap:8px;margin-left:auto}
+.acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-left:auto}
+#clock-chip{font-variant-numeric:tabular-nums}
 .acts .pill{padding:0 14px;min-height:46px}
 .side > *{pointer-events:auto}
 .hint{background:var(--panel);border-radius:20px;padding:6px 16px;font-weight:700;font-size:17px}
 .caption{background:var(--panel);border-radius:18px;padding:10px 16px 11px;display:flex;flex-direction:column;gap:1px;border:2px solid var(--line);cursor:pointer}
-.caption .more{display:none;flex-direction:column;gap:2px;margin-top:4px}
-.caption.open .more{display:flex}
-.caption .tip{font-size:13px;color:var(--soft)}
-.caption.open .tip{display:none}
+.caption .more{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.caption .tip{font-size:13px;color:var(--soft);text-align:right}
 .caption.meal{border-color:var(--coral)}
 .when{font-size:17px;font-weight:700;color:var(--soft);font-variant-numeric:tabular-nums}
 .now{font-family:var(--disp);font-size:27px;line-height:1.2;text-wrap:balance}
@@ -74,7 +73,7 @@ summary{min-height:44px;padding:9px 14px;font-weight:700;color:var(--soft)}
 .link{align-self:flex-start;background:none;border:0;padding:8px 0;color:var(--sage);font-weight:700;text-decoration:underline;font-size:17px}
 .geo-msg{font-size:15px;color:var(--soft);min-height:0}
 .enter{min-height:66px;border:0;border-radius:18px;background:var(--sage);color:var(--sage-ink);font-family:var(--disp);font-size:28px;margin-top:8px}
-@media (min-width:760px){ .caption .more{display:flex} .caption .tip{display:none} }
+
 
 /* 안내도 */
 .map{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(30,44,34,.55);overflow:auto;
