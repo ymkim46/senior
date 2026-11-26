@@ -84,18 +84,32 @@ function tone(f, t, len, vol, type) {
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.5, len * 0.2)); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
   o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + len + 0.1);
 }
+let silentEl = null;
+function unlockAudio() { // 누른 순간에 소리 길을 엽니다 (아이폰은 무음 스위치가 켜져 있으면 이렇게 해야 소리가 납니다)
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state !== 'running') actx.resume().catch(() => {});
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* 없는 기기 */ }
+  if (!silentEl) { // 소리 없는 짧은 음원을 되풀이해 틀어 두면 화면에서 만든 소리도 '음악'으로 취급됩니다
+    const n = 4000, b = new Uint8Array(44 + n), dv = new DataView(b.buffer);
+    [[0, 0x52494646], [8, 0x57415645], [12, 0x666d7420], [36, 0x64617461]].forEach(([o, v]) => dv.setUint32(o, v));
+    dv.setUint32(4, 36 + n, true); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); dv.setUint32(40, n, true);
+    b.fill(128, 44);
+    silentEl = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' }))); silentEl.loop = true; silentEl.setAttribute('playsinline', '');
+  }
+  silentEl.play().catch(() => {});
+}
 function startMusic() {
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    unlockAudio();
     if (!musicGain) { musicGain = actx.createGain(); musicGain.gain.value = 0;
       const dl = actx.createDelay(1); dl.delayTime.value = 0.42; const fb = actx.createGain(); fb.gain.value = 0.32; // 은은한 울림
       musicGain.connect(actx.destination); musicGain.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(actx.destination); }
-    musicGain.gain.cancelScheduledValues(actx.currentTime); musicGain.gain.linearRampToValueAtTime(0.5, actx.currentTime + 3);
+    musicGain.gain.cancelScheduledValues(actx.currentTime); musicGain.gain.setValueAtTime(musicGain.gain.value, actx.currentTime); musicGain.gain.linearRampToValueAtTime(1, actx.currentTime + 2);
     clearInterval(musicTimer); noteAt = actx.currentTime + 0.2; let beat = 0;
     musicTimer = setInterval(() => { // 조금 앞서 음을 예약해 둡니다
       while (noteAt < actx.currentTime + 1.5) {
-        if (beat % 8 === 0) { const root = [130.81, 98, 110, 146.83][(beat / 8) % 4]; tone(root, noteAt, 7, 0.05, 'sine'); tone(root * 1.5, noteAt, 7, 0.03, 'sine'); }
-        if (Math.random() < 0.8) { deg = Math.max(0, Math.min(SCALE.length - 1, deg + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)])); tone(SCALE[deg], noteAt, 2.6, 0.07, 'triangle'); }
+        if (beat % 8 === 0) { const root = [130.81, 98, 110, 146.83][(beat / 8) % 4]; tone(root * 2, noteAt, 7, 0.1, 'sine'); tone(root * 3, noteAt, 7, 0.06, 'sine'); }
+        if (Math.random() < 0.8) { deg = Math.max(0, Math.min(SCALE.length - 1, deg + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)])); tone(SCALE[deg] * 2, noteAt, 2.6, 0.2, 'triangle'); }
         noteAt += 0.85; beat++;
       }
     }, 400);
@@ -372,13 +386,13 @@ function armchair(x, z, fx, fz, col, list) {
   const g = new THREE.Group(); g.position.set(x, FY, z); g.rotation.y = Math.atan2(fx - x, fz - z); scene.add(g);
   box(0.82, 0.24, 0.78, col, 0, 0.42, 0, g); box(0.82, 0.62, 0.18, col, 0, 0.8, -0.32, g);
   [-0.44, 0.44].forEach((ax) => { box(0.07, 0.07, 0.8, C.wood, ax, 0.66, 0, g); box(0.07, 0.66, 0.07, C.wood, ax, 0.33, 0.36, g); box(0.07, 0.66, 0.07, C.wood, ax, 0.33, -0.36, g); });
-  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz });
+  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz }); obC.push([x, z, 0.3]);
 }
 function chair(x, z, fx, fz, col, list) {
   const g = new THREE.Group(); g.position.set(x, FY, z); g.rotation.y = Math.atan2(fx - x, fz - z); scene.add(g);
   box(0.52, 0.09, 0.5, col, 0, 0.46, 0, g); box(0.52, 0.5, 0.07, C.oak, 0, 0.78, -0.24, g);
   [[-0.22, -0.2], [0.22, -0.2], [-0.22, 0.2], [0.22, 0.2]].forEach((l) => box(0.05, 0.44, 0.05, C.oak, l[0], 0.22, l[1], g));
-  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz });
+  list?.push({ x, z, fx, fz }); ALLSEATS.push({ x, z, fx, fz }); obC.push([x, z, 0.22]);
 }
 function vase(x, y, z, col) { cyl(0.09, 0.07, 0.2, 0xe8eef0, x, y + 0.1, z, null, 10); [[0, 0.3, 0], [0.1, 0.26, 0.06], [-0.09, 0.27, -0.05]].forEach((f) => blobs.push([x + f[0], y + f[1], z + f[2], 0.11, season === 0 ? 0xf6f3ea : col])); }
 function roundSet(cx, cz, n, r, list, cols, big) {
@@ -802,7 +816,7 @@ function moveCam(dt, t) {
   if (!entered || !me) { lookWant.set(0, 1.6, -4); yaw = still ? 0 : Math.sin(t * 0.08) * 0.35; pitch = 0.2; dist = 23; }
   else {
     const q = me.g.position; lookWant.set(q.x, q.y + 1.25, q.z);
-    if (!pointers.size && performance.now() - lastDrag > 3500 && Math.hypot(me.target.x - q.x, me.target.z - q.z) > 1.2) { // 걷는 동안에는 등 뒤로 따라 돕니다
+    if (!stick.was && !pointers.size && performance.now() - lastDrag > 3500 && Math.hypot(me.target.x - q.x, me.target.z - q.z) > 1.2) { // 걷는 동안에는 등 뒤로 따라 돕니다
       let dy = me.g.rotation.y + Math.PI - view.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); view.yaw += dy * Math.min(1, dt * 0.9); yaw = view.yaw;
     }
     if (mode === 'stay' && !still && !pointers.size) yaw += Math.sin(t * 0.09) * 0.12;
@@ -861,6 +875,35 @@ function tapWalk(e) {
   if (seat) { sit(me, seat); marker.visible = false; toast('앉으러 가요', 4000); return; }
   place(me, hit.x, hit.z, false);
   marker.position.set(hit.x, floorY(hit.x, hit.z) + 0.06, hit.z); marker.visible = true;
+}
+// 조이스틱 (화면 왼쪽 아래 동그라미)과 방향키
+const stick = { x: 0, y: 0, id: null, was: false }, keys = new Set();
+{ const el = $('stick'), knob = $('knob');
+  const set = (e) => { const r = el.getBoundingClientRect(), R = r.width / 2; let x = (e.clientX - r.left - R) / R, y = (e.clientY - r.top - R) / R; const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } stick.x = x; stick.y = y; knob.style.transform = `translate(${x * R * 0.6}px, ${y * R * 0.6}px)`; };
+  const end = (e) => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; };
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); stick.id = e.pointerId; try { el.setPointerCapture(e.pointerId); } catch { /* 없음 */ } set(e); });
+  el.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) set(e); });
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  const KEY = { ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd', ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r' };
+  window.addEventListener('keydown', (e) => { if (KEY[e.code] && !/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) { keys.add(KEY[e.code]); e.preventDefault(); } });
+  window.addEventListener('keyup', (e) => { if (KEY[e.code]) keys.delete(KEY[e.code]); });
+  window.addEventListener('blur', () => keys.clear()); }
+function driveStick() {
+  if (!me || !entered) return;
+  const jx = stick.x + (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0), jy = stick.y + (keys.has('d') ? 1 : 0) - (keys.has('u') ? 1 : 0), l = Math.hypot(jx, jy);
+  const q = me.g.position;
+  if (l < 0.2) { if (stick.was) { stick.was = false; place(me, q.x, q.z, false); me.plan = null; } return; }
+  if (mode !== 'walk') setMode('walk');
+  const sy = Math.sin(view.yaw), cy = Math.cos(view.yaw); // 화면에서 위쪽이 앞으로
+  const wx = (cy * jx + sy * jy) / l, wz = (-sy * jx + cy * jy) / l;
+  const stuck = isBlocked(q.x, q.z); let nx = q.x, nz = q.z;
+  for (const [dx, dz] of [[wx, wz], [Math.sign(wx) * (Math.abs(wx) > 0.3 ? 1 : 0), 0], [0, Math.sign(wz) * (Math.abs(wz) > 0.3 ? 1 : 0)]]) { // 막히면 벽을 따라 미끄러집니다
+    if (!dx && !dz) continue;
+    if (stuck || (!isBlocked(q.x + dx * 0.3, q.z + dz * 0.3) && !isBlocked(q.x + dx * 0.6, q.z + dz * 0.6))) { nx = q.x + dx * 0.6; nz = q.z + dz * 0.6; break; }
+  }
+  if (cellOf(nx, nz) < 0) { nx = q.x; nz = q.z; }
+  place(me, nx, nz, false); me.plan = { pts: [], end: [nx, nz], free: true }; me.planT = [nx, nz]; me.planSeat = false;
+  stick.was = true; marker.visible = false;
 }
 const planeHi = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9);
 const seatTaken = (q) => people.some((p) => p !== me && p.g.visible && Math.hypot(p.target.x - q.x, p.target.z - q.z) < 0.4);
@@ -929,7 +972,7 @@ function frame() {
   const min = nowMin(), s = slot(min);
   paintCaption(false);
   paintSky(min);
-  direct(s.scene, T); neighbors(s.scene, T);
+  direct(s.scene, T); neighbors(s.scene, T); driveStick();
   movePeople(dt, T);
   ducks.forEach((d) => { const a = T * 0.06 + d.userData.o; d.position.set(Math.sin(a) * 7 - 3, 0.05 + Math.sin(T * 2 + d.userData.o * 9) * 0.015, LAKE.z + Math.cos(a) * 4.5); d.rotation.y = a + Math.PI / 2; });
   { const w = NB[2].g, dx = w.position.x - dog.position.x, dz = w.position.z - dog.position.z, dd = Math.hypot(dx, dz); // 강아지는 주인을 졸졸
@@ -990,7 +1033,7 @@ $('gate').addEventListener('submit', (e) => {
   const first = !store.stamps.includes(today.key);
   if (first) store.stamps = [...store.stamps, today.key].slice(-60);
   save();
-  $('gate').hidden = true; $('top').hidden = false; $('bottom').hidden = false; $('zoom').hidden = false;
+  $('gate').hidden = true; $('top').hidden = false; $('bottom').hidden = false; $('zoom').hidden = false; $('stick').hidden = false;
   entered = true;
   if (renderer) {
     me = userPerson({ name: store.name, leader: store.leader, look: store.look, x: 0, z: 14 });
@@ -1004,6 +1047,7 @@ $('gate').addEventListener('submit', (e) => {
   toast(first ? `출석 도장 쾅! 이번 주 ${week}번째예요` : `${store.name} 님, 다시 오셨네요`);
   paintCaption(true);
   announce(`${store.name} 님, 어서 오세요. ${fullStatus()}`);
+  unlockAudio();
   if (musicOn) startMusic();
   nextVisit = T + 5;
 });
@@ -1036,7 +1080,7 @@ setInterval(() => { if (me) $('sit').textContent = me.seated ? '🧍 일어서�
 $('music').addEventListener('click', function () {
   musicOn = !musicOn; store.music = musicOn; save();
   this.setAttribute('aria-pressed', musicOn); this.setAttribute('aria-label', musicOn ? '음악 끄기' : '음악 켜기');
-  if (musicOn) startMusic(); else stopMusic();
+  if (musicOn) { startMusic(); toast('음악을 켰어요', 3000); } else { stopMusic(); toast('음악을 껐어요', 3000); }
 });
 $('music').setAttribute('aria-pressed', musicOn);
 $('zoom-in').addEventListener('click', () => zoomBy(0.72));
