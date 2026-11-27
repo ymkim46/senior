@@ -77,13 +77,10 @@ function chime() {
     });
   } catch { /* 소리를 못 내는 기기 */ }
 }
-let musicOn = store.music !== false, musicGain = null, musicTimer = 0, noteAt = 0, deg = 4;
-const SCALE = [196, 220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25]; // 오음계
-function tone(f, t, len, vol, type) {
-  const o = actx.createOscillator(), g = actx.createGain(); o.type = type; o.frequency.value = f;
-  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + Math.min(0.5, len * 0.2)); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-  o.connect(g); g.connect(musicGain); o.start(t); o.stop(t + len + 0.1);
-}
+let musicOn = store.music !== false, musicEl = null;
+fetch('/audio/bgm.mp3', { method: 'HEAD' }).then((r) => { if (r.ok) { musicEl = new Audio('/audio/bgm.mp3'); musicEl.loop = true; musicEl.volume = 0.35; musicEl.setAttribute('playsinline', ''); $('music').hidden = false; if (entered && musicOn) startMusic(); } }).catch(() => {});
+function startMusic() { musicEl?.play().catch(() => {}); }
+function stopMusic() { musicEl?.pause(); }
 let silentEl = null;
 function unlockAudio() { // 누른 순간에 소리 길을 엽니다 (아이폰은 무음 스위치가 켜져 있으면 이렇게 해야 소리가 납니다)
   actx = actx || new (window.AudioContext || window.webkitAudioContext)();
@@ -98,24 +95,6 @@ function unlockAudio() { // 누른 순간에 소리 길을 엽니다 (아이폰�
   }
   silentEl.play().catch(() => {});
 }
-function startMusic() {
-  try {
-    unlockAudio();
-    if (!musicGain) { musicGain = actx.createGain(); musicGain.gain.value = 0;
-      const dl = actx.createDelay(1); dl.delayTime.value = 0.42; const fb = actx.createGain(); fb.gain.value = 0.32; // 은은한 울림
-      musicGain.connect(actx.destination); musicGain.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(actx.destination); }
-    musicGain.gain.cancelScheduledValues(actx.currentTime); musicGain.gain.setValueAtTime(musicGain.gain.value, actx.currentTime); musicGain.gain.linearRampToValueAtTime(1, actx.currentTime + 2);
-    clearInterval(musicTimer); noteAt = actx.currentTime + 0.2; let beat = 0;
-    musicTimer = setInterval(() => { // 조금 앞서 음을 예약해 둡니다
-      while (noteAt < actx.currentTime + 1.5) {
-        if (beat % 8 === 0) { const root = [130.81, 98, 110, 146.83][(beat / 8) % 4]; tone(root * 2, noteAt, 7, 0.1, 'sine'); tone(root * 3, noteAt, 7, 0.06, 'sine'); }
-        if (Math.random() < 0.8) { deg = Math.max(0, Math.min(SCALE.length - 1, deg + [-2, -1, -1, 1, 1, 2][Math.floor(Math.random() * 6)])); tone(SCALE[deg] * 2, noteAt, 2.6, 0.2, 'triangle'); }
-        noteAt += 0.85; beat++;
-      }
-    }, 400);
-  } catch { /* 소리를 못 내는 기기 */ }
-}
-function stopMusic() { clearInterval(musicTimer); try { musicGain?.gain.linearRampToValueAtTime(0, actx.currentTime + 0.6); } catch { /* 없음 */ } }
 function speak(text, onEnd) {
   try {
     if (!('speechSynthesis' in window)) return false;
@@ -618,6 +597,58 @@ function talk(p) {
   toast(`${who}: ${text}`, 9000);
   try { if (soundOn && !speechSynthesis.speaking) speak(text); } catch { /* 없음 */ }
 }
+// 내가 말을 걸면 가장 가까운 도우미나 이웃이 대답합니다 (가까이 아무도 없으면 지배인)
+function listener() {
+  let best = null, bd = 7;
+  for (const p of people) if (!p.real && p !== me && p.g.visible) { const d = p.g.position.distanceTo(me.g.position); if (d < bd) { bd = d; best = p; } }
+  return best || butler;
+}
+function localReply(p, q) { // AI가 꺼져 있을 때 쓰는 간단한 대답
+  const min = nowMin(), s = slot(min);
+  if (/몇\s*시|시간|지금/.test(q)) return `지금은 ${clockText(min)}이에요.`;
+  if (/며칠|날짜|요일|오늘/.test(q)) return `오늘은 ${today.month}월 ${today.day}일 ${DOW[today.dow]}이에요.`;
+  if (/날씨|비|눈|추|더/.test(q)) return wxText() || '오늘 날씨는 제가 아직 못 받아 왔어요.';
+  if (/다음|일정|뭐\s*해|프로그램/.test(q)) return s.nxt ? `다음은 ${clockText(s.nxt.s)}에 ${s.nxt.title}${josa(s.nxt.title, '가', '이')} 있어요.` : '오늘 일정은 다 끝났어요.';
+  if (/밥|식사|점심|저녁|아침|배고/.test(q)) { const m = PLAN.find((x) => x.meal && x.s > min); return m ? `${clockText(m.s)}에 ${m.title} 시간이에요.` : '오늘 식사는 다 끝났어요. 내일 아침에 봬요.'; }
+  if (/안녕|반가/.test(q)) return `네, ${store.name || '어르신'} 님. 반갑습니다!`;
+  if (/고마|감사/.test(q)) return '별말씀을요. 언제든 불러 주세요.';
+  return lineFor(p);
+}
+let asking = false;
+async function ask(q) {
+  q = q.trim().slice(0, 120); if (!q || !me || asking) return;
+  asking = true;
+  const p = listener(), who = p.says || '이웃';
+  p.greetedAt = lastTalk = performance.now(); if (!p.seated) p.face = me.g.position.clone();
+  toast(`나: ${q}`, 20000);
+  let text = null;
+  try {
+    const min = nowMin(), s = slot(min);
+    const r = await fetch('/api/talk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: p.role, who, name: store.name, text: q, prev: p.said || [],
+      now: `${today.month}월 ${today.day}일 ${DOW[today.dow]} ${clockText(min)}`, doing: $('now').textContent, next: $('next').textContent, weather: wxText() }) });
+    if (r.ok) text = (await r.json()).text;
+  } catch { /* 아래 준비된 대답으로 */ }
+  if (!text) text = localReply(p, q);
+  p.said = [...(p.said || []), text].slice(-4);
+  sayHello(p); toast(`${who}: ${text}`, 12000);
+  if (soundOn) speak(text);
+  asking = false;
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function openType() { $('say-row').hidden = false; $('say-in').focus(); }
+function startMic() {
+  if (!me) return;
+  if (!SR) return openType();
+  try { speechSynthesis.cancel(); } catch { /* 없음 */ }
+  if (rec) { rec.stop(); return; }
+  rec = new SR(); rec.lang = 'ko-KR'; rec.interimResults = false; rec.maxAlternatives = 1;
+  let got = false;
+  rec.onresult = (e) => { got = true; ask(e.results[0][0].transcript); };
+  rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { toast('마이크를 쓸 수 없어요. 글로 적어 주세요.', 6000); openType(); } };
+  rec.onend = () => { rec = null; $('mic').classList.remove('on'); if (!got && $('say-row').hidden) toast('잘 못 들었어요. 다시 눌러 말씀해 주세요.', 5000); };
+  try { rec.start(); $('mic').classList.add('on'); toast(`듣고 있어요. ${listener().says || '이웃'}에게 말씀하세요.`, 8000); } catch { rec = null; openType(); }
+}
 const STAFF = 'rgba(79,122,90,.95)';
 const butler = person({ name: '도우미 · 지배인', cloth: 0xa9bd9a, pants: 0x8fa582, hair: 0x2a2622, style: 2, bg: STAFF, x: 2.2, z: -2.2 });
 const chef = person({ name: '도우미 · 영양사', cloth: 0xfafaf5, pants: 0x7f9670, hair: 0x2a2622, style: 2, bg: STAFF, x: 9.3, z: -9 });
@@ -649,6 +680,8 @@ const NB = [
   ['바둑 두는 이웃', 0xb98ac4, 0], ['바둑 두는 이웃', 0x8a8f9a, 3], ['텃밭 가꾸는 이웃', 0xd9805f, 3], ['책 읽는 이웃', 0x6fa7a0, 2],
   ['이야기 나누는 이웃', 0xc9886a, 1], ['이야기 나누는 이웃', 0x9fb08a, 2],
 ].map((q, i) => person({ name: q[0], cloth: q[1], hair: [0xe8e8e8, 0xcfcfcf, 0xbdbdbd, 0xdedede][i % 4], style: q[2], x: (i % 5) * 2 - 4, z: 8 + (i % 3) }));
+const NB_NAMES = ['김순자', '박영철', '이정희', '최병호', '정말순', '한상구', '윤옥자', '오금순', '강춘자', '임덕수'];
+NB.forEach((p, k) => { p.says = `${NB_NAMES[k]} 님`; p.small = true; p.g.remove(p.label); p.label = tag(p.says, 'rgba(38,52,43,.72)'); p.label.position.y = 1.98; p.g.add(p.label); });
 NB.forEach((p, k) => { p.role = ['walk', 'walk', 'dog', 'fish', 'baduk', 'baduk', 'farm', 'read', 'chat', 'chat'][k]; });
 const trail = (a) => [Math.sin(a) * 18.5, LAKE.z + Math.cos(a) * 13.2];
 function neighbors(sc, t) {
@@ -752,7 +785,9 @@ function movePeople(dt, t) {
     g.position.y += (fy - g.position.y) * Math.min(1, dt * 10);
     p.body.scale.y += ((seated ? 0.8 : 1) - p.body.scale.y) * Math.min(1, dt * 6);
     const near = Math.max(0.42, Math.min(1, cam.position.distanceTo(g.position) / 8)); // 가까이서는 이름표를 작게
-    p.label.scale.set(2.2 * near, 0.46 * near, 1);
+    const ls = near * (p.small ? 0.72 : 1); p.label.scale.set(2.2 * ls, 0.46 * ls, 1);
+    if (p.bubble) p.bubble.scale.set(2.2 * near, 0.46 * near, 1);
+    if (p.small) p.label.visible = cam.position.distanceTo(g.position) < 15; // 이웃 이름은 가까이서만
     p.robot?.update(moving, p.wave, dt);
     for (const ag of p.arms) {
       const want = (!moving && p.wave) ? ag.userData.sd * (1.5 + Math.sin(t * 2.2) * 1.3) : 0;
@@ -1076,6 +1111,9 @@ $('map-btn').addEventListener('click', () => { paintMe(); mapEl.hidden = false; 
 $('map-close').addEventListener('click', () => { mapEl.hidden = true; });
 setInterval(() => { if (!mapEl.hidden) paintMe(); }, 500);
 $('sit').addEventListener('click', sitOrStand);
+$('mic').addEventListener('click', startMic);
+$('type').addEventListener('click', () => { if ($('say-row').hidden) openType(); else $('say-row').hidden = true; });
+$('say-row').addEventListener('submit', (e) => { e.preventDefault(); const v = $('say-in').value; $('say-in').value = ''; $('say-in').blur(); $('say-row').hidden = true; ask(v); });
 setInterval(() => { if (me) $('sit').textContent = me.seated ? '🧍 일어서기' : '🪑 앉기'; }, 400);
 $('music').addEventListener('click', function () {
   musicOn = !musicOn; store.music = musicOn; save();
