@@ -46,7 +46,7 @@ summary{min-height:44px;padding:9px 14px;font-weight:700;color:var(--soft)}
 #clock-chip{font-variant-numeric:tabular-nums}
 .acts .pill{padding:0 14px;min-height:46px}
 .side > *{pointer-events:auto}
-.hint{background:var(--panel);border-radius:20px;padding:6px 16px;font-weight:700;font-size:17px}
+.hint{background:var(--panel);border-radius:20px;padding:8px 16px;font-weight:700;font-size:18px;line-height:1.35;max-width:100%}
 .caption{background:var(--panel);border-radius:18px;padding:10px 16px 11px;display:flex;flex-direction:column;gap:1px;border:2px solid var(--line);cursor:pointer}
 .caption .more{display:flex;flex-direction:column;gap:2px;margin-top:4px}
 .caption .tip{font-size:13px;color:var(--soft);text-align:right}
@@ -94,3 +94,18 @@ summary{min-height:44px;padding:9px 14px;font-weight:700;color:var(--soft)}
   display:grid;place-items:center;border:3px solid #fff;pointer-events:none;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 
 .map-card{max-height:100%;overflow:auto}
+
+/* 이동 조이스틱 */
+.stick{position:absolute;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(236px + env(safe-area-inset-bottom,0px));width:128px;height:128px;border-radius:50%;
+  background:rgba(255,250,242,.5);border:3px solid rgba(255,255,255,.85);box-shadow:0 2px 10px rgba(0,0,0,.25);touch-action:none;display:grid;place-items:center;cursor:grab;-webkit-user-select:none;user-select:none}
+.knob{width:56px;height:56px;border-radius:50%;background:var(--sage);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none}
+
+.stick .ar{position:absolute;font-size:17px;color:var(--ink);opacity:.75;pointer-events:none}
+.stick .u{top:5px;left:50%;transform:translateX(-50%)} .stick .d{bottom:5px;left:50%;transform:translateX(-50%)}
+.stick .l{left:7px;top:50%;transform:translateY(-50%)} .stick .r{right:7px;top:50%;transform:translateY(-50%)}
+/* 말하기 */
+.pill.talk{background:var(--coral);border-color:var(--coral);color:#fff}
+.pill.talk.on{animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 10px rgba(192,79,53,.3)}}
+.say-row{display:flex;gap:8px}
+.say-row input{flex:1;min-width:0;min-height:54px;border-radius:16px;border:2px solid var(--line);background:#fff;padding:0 14px;font-size:19px}
